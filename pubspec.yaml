@@ -1,0 +1,79 @@
+name: pet_track
+description: A Flutter app for tracking and reuniting lost pets with their families.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  provider: ^6.1.1
+  
+  # UI & Styling
+  # google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  
+  # Navigation
+  go_router: ^12.1.3
+  
+  # Local Storage
+  shared_preferences: ^2.2.2
+  
+  # HTTP & API
+  http: ^1.1.0
+  dio: ^5.3.2
+  
+  # Location Services
+  geolocator: ^10.1.0
+  geocoding: ^2.1.1
+  
+  # Camera & Image
+  image_picker: ^1.0.4
+  camera: ^0.10.5+5
+  
+  # QR Code
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^3.5.6
+  # qr_code_scanner: ^1.0.1  # Web compatibility issues
+  
+  # Permissions
+  permission_handler: ^11.0.1
+  
+  # Firebase (if needed later)
+  # firebase_core: ^2.24.2
+  # firebase_auth: ^4.15.3
+  # cloud_firestore: ^4.13.6
+  # firebase_storage: ^11.5.6
+  
+  # Utilities
+  uuid: ^4.2.1
+  intl: ^0.18.1
+  url_launcher: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
+  
+  # fonts:
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: assets/fonts/Poppins-Regular.ttf
+  #       - asset: assets/fonts/Poppins-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Poppins-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Poppins-Bold.ttf
+  #         weight: 700 
