@@ -15,7 +15,6 @@ dependencies:
   provider: ^6.1.1
   
   # UI & Styling
-  # google_fonts: ^6.1.0
   flutter_svg: ^2.0.9
   
   # Navigation
@@ -39,21 +38,20 @@ dependencies:
   # QR Code
   qr_flutter: ^4.1.0
   mobile_scanner: ^3.5.6
-  # qr_code_scanner: ^1.0.1  # Web compatibility issues
   
   # Permissions
   permission_handler: ^11.0.1
   
-  # Firebase (if needed later)
-  # firebase_core: ^2.24.2
-  # firebase_auth: ^4.15.3
-  # cloud_firestore: ^4.13.6
-  # firebase_storage: ^11.5.6
-  
   # Utilities
   uuid: ^4.2.1
-  intl: ^0.18.1
+  intl: ^0.19.0
   url_launcher: ^6.2.1
+
+  # Firebase
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
+  firebase_storage: 12.4.10
 
 dev_dependencies:
   flutter_test:
@@ -66,14 +64,3 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-  
-  # fonts:
-  #   - family: Poppins
-  #     fonts:
-  #       - asset: assets/fonts/Poppins-Regular.ttf
-  #       - asset: assets/fonts/Poppins-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/Poppins-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/Poppins-Bold.ttf
-  #         weight: 700 

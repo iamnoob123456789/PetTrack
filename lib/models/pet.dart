@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Pet {
   final String id;
   final String name;
@@ -43,6 +45,59 @@ class Pet {
     this.microchipNumber,
   });
 
+  // Convert Firestore Document to Pet object
+  factory Pet.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Pet(
+      id: doc.id, // Use Firestore document ID
+      name: data['name'] ?? '',
+      type: data['type'] ?? '',
+      breed: data['breed'] ?? '',
+      color: data['color'] ?? '',
+      collarColor: data['collarColor'] ?? '',
+      description: data['description'] ?? '',
+      photoUrls: List<String>.from(data['photoUrls'] ?? []),
+      ownerName: data['ownerName'] ?? '',
+      ownerPhone: data['ownerPhone'] ?? '',
+      ownerEmail: data['ownerEmail'] ?? '',
+      lastSeenDate: (data['lastSeenDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      latitude: (data['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (data['longitude'] as num?)?.toDouble() ?? 0.0,
+      address: data['address'] ?? '',
+      status: data['status'] ?? 'lost',
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      qrCode: data['qrCode'],
+      isMicrochipped: data['isMicrochipped'] ?? false,
+      microchipNumber: data['microchipNumber'],
+    );
+  }
+
+  // Convert Pet object to Firestore data
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'type': type,
+      'breed': breed,
+      'color': color,
+      'collarColor': collarColor,
+      'description': description,
+      'photoUrls': photoUrls,
+      'ownerName': ownerName,
+      'ownerPhone': ownerPhone,
+      'ownerEmail': ownerEmail,
+      'lastSeenDate': lastSeenDate,
+      'latitude': latitude,
+      'longitude': longitude,
+      'address': address,
+      'status': status,
+      'createdAt': createdAt,
+      'qrCode': qrCode,
+      'isMicrochipped': isMicrochipped,
+      'microchipNumber': microchipNumber,
+    };
+  }
+
+  // JSON serialization (for local storage/API calls)
   factory Pet.fromJson(Map<String, dynamic> json) {
     return Pet(
       id: json['id'] ?? '',
@@ -68,6 +123,7 @@ class Pet {
     );
   }
 
+  // JSON deserialization
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -93,6 +149,7 @@ class Pet {
     };
   }
 
+  // Create a copy with updated fields
   Pet copyWith({
     String? id,
     String? name,
@@ -138,4 +195,16 @@ class Pet {
       microchipNumber: microchipNumber ?? this.microchipNumber,
     );
   }
-} 
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Pet &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          status == other.status;
+
+  @override
+  int get hashCode => id.hashCode ^ name.hashCode ^ status.hashCode;
+}

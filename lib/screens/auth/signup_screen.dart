@@ -33,29 +33,58 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _signUp() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final success = await authService.signUp(
-      _nameController.text.trim(),
-      _emailController.text.trim(),
-      _phoneController.text.trim(),
-      _passwordController.text,
+  // Validate password match
+  if (_passwordController.text != _confirmPasswordController.text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Passwords do not match'),
+        backgroundColor: Colors.red,
+      ),
     );
-
-    if (success && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authService.error),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+    return;
   }
+
+  final authService = Provider.of<AuthService>(context, listen: false);
+  
+  // Add debug print
+  debugPrint('Starting sign-up process...');
+  
+  final success = await authService.signUp(
+    _nameController.text.trim(),
+    _emailController.text.trim(),
+    _phoneController.text.trim(),
+    _passwordController.text,
+  );
+
+  // Add debug print
+  debugPrint('Sign-up completed. Success: $success');
+  
+  if (success && mounted) {
+    // Add debug print
+    debugPrint('Navigating to HomeScreen...');
+    
+    // Clear all text fields before navigation
+    _nameController.clear();
+    _emailController.clear();
+    _phoneController.clear();
+    _passwordController.clear();
+    _confirmPasswordController.clear();
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      (route) => false,
+    );
+  } else if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(authService.error),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {

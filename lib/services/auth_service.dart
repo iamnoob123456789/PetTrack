@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class User {
   final String id;
@@ -38,6 +39,9 @@ class User {
 }
 
 class AuthService extends ChangeNotifier {
+  final fb.FirebaseAuth _auth = fb.FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   User? _currentUser;
   bool _isLoading = false;
   String _error = '';
@@ -53,28 +57,51 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userJson = prefs.getString('user');
-      
-      if (userJson != null) {
-        // Parse user data from SharedPreferences
-        // For now, we'll use mock data
-        _currentUser = User(
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          phone: '+1-555-0123',
-        );
+      // Check current auth state synchronously first
+      final currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        await _loadUserFromFirestore(currentUser.uid);
         _isAuthenticated = true;
       }
-      
-      _isLoading = false;
-      notifyListeners();
+
+      // Set up auth state listener for future changes
+      _auth.authStateChanges().listen((fb.User? user) async {
+        _isLoading = true;
+        notifyListeners();
+
+        try {
+          if (user != null) {
+            await _loadUserFromFirestore(user.uid);
+            _isAuthenticated = true;
+          } else {
+            _currentUser = null;
+            _isAuthenticated = false;
+          }
+        } finally {
+          _isLoading = false;
+          notifyListeners();
+        }
+      });
     } catch (e) {
-      _error = 'Failed to initialize auth: $e';
+      _error = 'Initialization failed: $e';
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> _loadUserFromFirestore(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        _currentUser = User.fromJson(doc.data()!);
+      } else {
+        _error = 'User document not found';
+      }
+    } catch (e) {
+      _error = 'Failed to load user: $e';
+    }
+    notifyListeners();
   }
 
   Future<bool> signIn(String email, String password) async {
@@ -83,37 +110,23 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Mock authentication
-      if (email == 'demo@example.com' && password == 'password') {
-        _currentUser = User(
-          id: '1',
-          name: 'John Doe',
-          email: email,
-          phone: '+1-555-0123',
-        );
-        _isAuthenticated = true;
-        
-        // Save to SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user', _currentUser!.toJson().toString());
-        
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      } else {
-        _error = 'Invalid email or password';
-        _isLoading = false;
-        notifyListeners();
-        return false;
-      }
+      final creds = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      await _loadUserFromFirestore(creds.user!.uid);
+      _isAuthenticated = true;
+      return true;
+    } on fb.FirebaseAuthException catch (e) {
+      _error = e.message ?? 'Login failed';
+      return false;
     } catch (e) {
-      _error = 'Sign in failed: $e';
+      _error = 'Unexpected error: $e';
+      return false;
+    } finally {
       _isLoading = false;
       notifyListeners();
-      return false;
     }
   }
 
@@ -123,50 +136,52 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // Mock registration
+      // 1. Create Firebase auth user
+      final creds = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // 2. Create user document in Firestore
+      final uid = creds.user!.uid;
+      await _firestore.collection('users').doc(uid).set({
+        'id': uid,
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'profileImageUrl': null,
+      });
+
+      // 3. Update local state
       _currentUser = User(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: uid,
         name: name,
         email: email,
         phone: phone,
       );
       _isAuthenticated = true;
       
-      // Save to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user', _currentUser!.toJson().toString());
-      
-      _isLoading = false;
-      notifyListeners();
       return true;
+    } on fb.FirebaseAuthException catch (e) {
+      _error = e.message ?? 'Signup failed';
+      return false;
     } catch (e) {
-      _error = 'Sign up failed: $e';
+      _error = 'Unexpected error occurred';
+      return false;
+    } finally {
       _isLoading = false;
       notifyListeners();
-      return false;
     }
   }
 
   Future<void> signOut() async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
-      // Clear SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('user');
-      
+      await _auth.signOut();
       _currentUser = null;
       _isAuthenticated = false;
-      
-      _isLoading = false;
-      notifyListeners();
     } catch (e) {
       _error = 'Sign out failed: $e';
-      _isLoading = false;
+    } finally {
       notifyListeners();
     }
   }
@@ -179,29 +194,26 @@ class AuthService extends ChangeNotifier {
     if (_currentUser == null) return;
 
     _isLoading = true;
-    _error = '';
     notifyListeners();
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-      
-      _currentUser = User(
+      final updatedUser = User(
         id: _currentUser!.id,
         name: name ?? _currentUser!.name,
         email: _currentUser!.email,
         phone: phone ?? _currentUser!.phone,
         profileImageUrl: profileImageUrl ?? _currentUser!.profileImageUrl,
       );
-      
-      // Update SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user', _currentUser!.toJson().toString());
-      
-      _isLoading = false;
-      notifyListeners();
+
+      await _firestore
+          .collection('users')
+          .doc(_currentUser!.id)
+          .update(updatedUser.toJson());
+
+      _currentUser = updatedUser;
     } catch (e) {
       _error = 'Profile update failed: $e';
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -211,4 +223,4 @@ class AuthService extends ChangeNotifier {
     _error = '';
     notifyListeners();
   }
-} 
+}
