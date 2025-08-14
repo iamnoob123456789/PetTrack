@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/pet.dart';
 
 class PetService extends ChangeNotifier {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Pet> _pets = [];
   List<Pet> _filteredPets = [];
   bool _isLoading = false;
@@ -12,50 +14,13 @@ class PetService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get error => _error;
 
-  // Mock data for demonstration
-  void loadMockData() {
-    _pets = [
-      Pet(
-        id: '1',
-        name: 'Buddy',
-        type: 'dog',
-        breed: 'Golden Retriever',
-        color: 'Golden',
-        collarColor: 'Blue',
-        description: 'Friendly golden retriever with a blue collar. Last seen near Central Park.',
-        photoUrls: ['https://example.com/buddy1.jpg'],
-        ownerName: 'John Smith',
-        ownerPhone: '+1-555-0123',
-        ownerEmail: 'john@example.com',
-        lastSeenDate: DateTime.now().subtract(const Duration(days: 2)),
-        latitude: 40.7589,
-        longitude: -73.9851,
-        address: 'Central Park, New York',
-        status: 'lost',
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      Pet(
-        id: '2',
-        name: 'Whiskers',
-        type: 'cat',
-        breed: 'Persian',
-        color: 'White',
-        collarColor: 'Red',
-        description: 'White Persian cat with red collar. Found near Brooklyn Bridge.',
-        photoUrls: ['https://example.com/whiskers1.jpg'],
-        ownerName: 'Sarah Johnson',
-        ownerPhone: '+1-555-0456',
-        ownerEmail: 'sarah@example.com',
-        lastSeenDate: DateTime.now().subtract(const Duration(days: 1)),
-        latitude: 40.7061,
-        longitude: -73.9969,
-        address: 'Brooklyn Bridge, New York',
-        status: 'found',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-    ];
-    _filteredPets = _pets;
-    notifyListeners();
+  // Initialize Firestore listener
+  void initialize() {
+    _firestore.collection('pets').snapshots().listen((snapshot) {
+      _pets = snapshot.docs.map((doc) => Pet.fromFirestore(doc)).toList();
+      _filteredPets = _pets;
+      notifyListeners();
+    });
   }
 
   Future<void> addPet(Pet pet) async {
@@ -64,20 +29,30 @@ class PetService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-      
-      final newPet = pet.copyWith(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        createdAt: DateTime.now(),
-      );
-      
-      _pets.add(newPet);
+      final docRef = await _firestore.collection('pets').add({
+        'name': pet.name,
+        'type': pet.type,
+        'breed': pet.breed,
+        'color': pet.color,
+        'collarColor': pet.collarColor,
+        'description': pet.description,
+        'photoUrls': pet.photoUrls,
+        'ownerName': pet.ownerName,
+        'ownerPhone': pet.ownerPhone,
+        'ownerEmail': pet.ownerEmail,
+        'lastSeenDate': pet.lastSeenDate,
+        'latitude': pet.latitude,
+        'longitude': pet.longitude,
+        'address': pet.address,
+        'status': pet.status,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      _pets.add(pet.copyWith(id: docRef.id));
       _filteredPets = _pets;
-      _isLoading = false;
-      notifyListeners();
     } catch (e) {
       _error = 'Failed to add pet: $e';
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -89,19 +64,32 @@ class PetService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-      
+      await _firestore.collection('pets').doc(pet.id).update({
+        'name': pet.name,
+        'type': pet.type,
+        'breed': pet.breed,
+        'color': pet.color,
+        'collarColor': pet.collarColor,
+        'description': pet.description,
+        'photoUrls': pet.photoUrls,
+        'ownerName': pet.ownerName,
+        'ownerPhone': pet.ownerPhone,
+        'ownerEmail': pet.ownerEmail,
+        'lastSeenDate': pet.lastSeenDate,
+        'latitude': pet.latitude,
+        'longitude': pet.longitude,
+        'address': pet.address,
+        'status': pet.status,
+      });
+
       final index = _pets.indexWhere((p) => p.id == pet.id);
       if (index != -1) {
         _pets[index] = pet;
         _filteredPets = _pets;
       }
-      
-      _isLoading = false;
-      notifyListeners();
     } catch (e) {
       _error = 'Failed to update pet: $e';
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -113,16 +101,12 @@ class PetService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-      
+      await _firestore.collection('pets').doc(petId).delete();
       _pets.removeWhere((pet) => pet.id == petId);
       _filteredPets = _pets;
-      
-      _isLoading = false;
-      notifyListeners();
     } catch (e) {
       _error = 'Failed to delete pet: $e';
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -171,4 +155,4 @@ class PetService extends ChangeNotifier {
     _error = '';
     notifyListeners();
   }
-} 
+}

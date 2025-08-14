@@ -27,17 +27,17 @@ class _HomeScreenState extends State<HomeScreen> {
     const ProfileScreen(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(initialPage: _currentIndex);
-    
-    // Load mock data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final petService = Provider.of<PetService>(context, listen: false);
-      petService.loadMockData();
-    });
-  }
+@override
+void initState() {
+  super.initState();
+  _pageController = PageController(initialPage: _currentIndex);
+  
+  // Replace initialize() with direct search if needed
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final petService = Provider.of<PetService>(context, listen: false);
+    petService.searchPets(status: 'lost'); // Default to lost pets
+  });
+}
 
   @override
   void dispose() {
@@ -112,4 +112,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-} 
+}
