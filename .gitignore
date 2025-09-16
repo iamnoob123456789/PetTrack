@@ -8,6 +8,7 @@ logs/
 # Environment variables / secret keys
 .env
 backend/config/serviceAccountKey.json
+lib/config.dart
 
 # OS files
 .DS_Store
