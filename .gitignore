@@ -1,0 +1,22 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Environment variables / secret keys
+.env
+backend/config/serviceAccountKey.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build / dist folders
+dist/
+build/
+
+# IDE / editor files
+.vscode/
+.idea/
