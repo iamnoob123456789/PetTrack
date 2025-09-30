@@ -49,20 +49,8 @@ class PetTrackApp extends StatelessWidget {
       child: MaterialApp(
         title: 'PetTrack',
         debugShowCheckedModeBanner: false,
-        theme: _buildTheme(),
+        theme: AppTheme.themeData,
         home: const SplashScreen(),
-      ),
-    );
-  }
-
-  ThemeData _buildTheme() {
-    return ThemeData(
-      useMaterial3: true,
-      primarySwatch: Colors.blue,
-      primaryColor: const Color(0xFF2196F3),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2196F3),
-        brightness: Brightness.light,
       ),
     );
   }
