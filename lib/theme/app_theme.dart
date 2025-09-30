@@ -19,7 +19,7 @@ class AppTheme {
       onSurface: darkText,
     ),
     scaffoldBackgroundColor: white,
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
