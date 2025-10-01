@@ -199,4 +199,3 @@ class ErrorAlert extends StatelessWidget {
       customIcon: icon ?? const Icon(Icons.error_outline),
     );
   }
-}

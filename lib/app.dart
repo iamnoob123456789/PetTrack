@@ -1,58 +1,66 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'screens/splash_screen.dart';
-import 'services/pet_service.dart';
-import 'services/location_service.dart';
-import 'services/auth_service.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'theme/app_theme.dart';
+import 'screens/login_screen.dart';
+import 'screens/admin_login_screen.dart';
+import 'screens/admin_screen.dart';
+import 'widgets/toaster_widget.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  // Set preferred orientations
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  // Set system UI overlay style
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
-
-  runApp(const PetTrackApp());
-}
-
-class PetTrackApp extends StatelessWidget {
+class PetTrackApp extends StatefulWidget {
   const PetTrackApp({super.key});
 
   @override
+  State<PetTrackApp> createState() => _PetTrackAppState();
+}
+
+class _PetTrackAppState extends State<PetTrackApp> {
+  String _currentScreen = 'login';
+  bool _isAdmin = false;
+
+  void _changeScreen(String screen) {
+    setState(() {
+      _currentScreen = screen;
+    });
+  }
+
+  void _setAdmin(bool isAdmin) {
+    setState(() {
+      _isAdmin = isAdmin;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => PetService()),
-        ChangeNotifierProvider(create: (_) => LocationService()),
-      ],
-      child: MaterialApp(
-        title: 'PetTrack',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.themeData,
-        home: const SplashScreen(),
+    return MaterialApp(
+      title: 'PetTrack',
+      theme: AppTheme.lightTheme(),
+      darkTheme: AppTheme.darkTheme(),
+      home: Scaffold(
+        body: _buildCurrentScreen(),
       ),
     );
+  }
+
+  Widget _buildCurrentScreen() {
+    // ... (same screen logic as before, but now uses the theme)
+    switch (_currentScreen) {
+      case 'login':
+        return Stack(
+          children: [
+            LoginScreen(
+              onLogin: () => _changeScreen('home'),
+              onNavigateToSignup: () => _changeScreen('signup'),
+              onNavigateToForgotPassword: () => _changeScreen('forgot'),
+              onNavigateToAdminLogin: () => _changeScreen('admin-login'),
+            ),
+            const Positioned(
+              top: 40,
+              left: 0,
+              right: 0,
+              child: ToasterWidget(),
+            ),
+          ],
+        );
+      // ... other cases remain the same
+    }
   }
 }

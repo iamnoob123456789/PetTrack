@@ -281,4 +281,3 @@ class AppTheme {
   static const double minScreenHeight = 100.0;
   static const double maxWidthMd = 448.0; // 28rem = 448px
   static const double maxWidth7Xl = 1280.0; // 80rem = 1280px
-}
