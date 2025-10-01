@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
-class ImageWithFallback extends StatefulWidget {
+class ImageWithFallbackEnhanced extends StatefulWidget {
   final String? src;
   final String? alt;
   final double? width;
@@ -10,7 +11,7 @@ class ImageWithFallback extends StatefulWidget {
   final BorderRadius? borderRadius;
   final Widget? customErrorWidget;
 
-  const ImageWithFallback({
+  const ImageWithFallbackEnhanced({
     super.key,
     required this.src,
     this.alt,
@@ -23,13 +24,11 @@ class ImageWithFallback extends StatefulWidget {
   });
 
   @override
-  State<ImageWithFallback> createState() => _ImageWithFallbackState();
+  State<ImageWithFallbackEnhanced> createState() => _ImageWithFallbackEnhancedState();
 }
 
-class _ImageWithFallbackState extends State<ImageWithFallback> {
+class _ImageWithFallbackEnhancedState extends State<ImageWithFallbackEnhanced> {
   bool _didError = false;
-  final String _errorImageBase64 =
-      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBvcGFjaXR5PSIuMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIzLjciPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iNiIvPjxwYXRoIGQ9Im0xNiA1OCAxNi0xOCAzMiAzMiIvPjxjaXJjbGUgY3g9IjUzIiBjeT0iMzUiIHI9IjciLz48L3N2Zz4KCg==';
 
   void _handleImageError(Object exception, StackTrace? stackTrace) {
     if (mounted) {
@@ -76,37 +75,16 @@ class _ImageWithFallbackState extends State<ImageWithFallback> {
         borderRadius: widget.borderRadius,
       ),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // For base64 SVG, we'd typically use flutter_svg package
-            // For now, using a simple icon as fallback
-            Icon(
-              Icons.broken_image,
-              size: _getErrorIconSize(),
-              color: Colors.grey[400],
-            ),
-            if (widget.alt != null && widget.alt!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Failed to load image',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
+        child: SvgPicture.network(
+          'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBvcGFjaXR5PSIuMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIzLjciPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iNiIvPjxwYXRoIGQ9Im0xNiA1OCAxNi0xOCAzMiAzMiIvPjxjaXJjbGUgY3g9IjUzIiBjeT0iMzUiIHI9IjciLz48L3N2Zz4KCg==',
+          width: widget.width != null ? widget.width! * 0.5 : 44,
+          height: widget.height != null ? widget.height! * 0.5 : 44,
+          colorFilter: ColorFilter.mode(
+            Colors.grey[400]!,
+            BlendMode.srcIn,
+          ),
         ),
       ),
     );
-  }
-
-  double _getErrorIconSize() {
-    if (widget.width != null && widget.height != null) {
-      return (widget.width! + widget.height!) / 8;
-    }
-    return 40.0;
   }
 }
