@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../models/pet.dart';
+import './ui/badge.dart';
+import './figma/image_with_fallback.dart';
 
 class PetCard extends StatelessWidget {
   final Pet pet;
@@ -14,190 +14,293 @@ class PetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Card(
-      elevation: 4,
+      elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withOpacity(0.2),
+        ),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image section
+            _buildImageSection(context),
+            // Content section
+            _buildContentSection(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageSection(BuildContext context) {
+    final statusColor = _getStatusColor(context);
+    
+    return Stack(
+      children: [
+        // Pet image
+        AspectRatio(
+          aspectRatio: 4 / 3,
+          child: ImageWithFallback(
+            src: pet.imageUrl,
+            alt: pet.name ?? pet.breed,
+            fit: BoxFit.cover,
+          ),
+        ),
+        // Status badge
+        Positioned(
+          top: 12,
+          right: 12,
+          child: Badge(
+            child: Text(
+              pet.status.name,
+              style: const TextStyle(fontSize: 12),
+            ),
+            variant: _getBadgeVariant(pet.status),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContentSection(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title section
+          _buildTitleSection(),
+          const SizedBox(height: 12),
+          // Details section
+          _buildDetailsSection(theme),
+          // Tags section
+          if (pet.tags.isNotEmpty) _buildTagsSection(),
+          // Reporter section
+          _buildReporterSection(theme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTitleSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          pet.name ?? 'Unknown Name',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          pet.breed,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailsSection(ThemeData theme) {
+    return Column(
+      children: [
+        _buildDetailRow(
+          icon: Icons.location_on,
+          text: pet.location.address,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(height: 4),
+        _buildDetailRow(
+          icon: Icons.calendar_today,
+          text: _formatDate(pet.lastSeen),
+          color: theme.colorScheme.primary,
+        ),
+        if (pet.hasCollar) ...[
+          const SizedBox(height: 4),
+          _buildDetailRow(
+            icon: Icons.local_offer,
+            text: '${pet.collarColor} collar',
+            color: theme.colorScheme.secondary,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String text,
+    required Color color,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTagsSection() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        children: [
+          for (final tag in pet.tags.take(3))
+            Badge(
+              child: Text(
+                tag,
+                style: const TextStyle(fontSize: 11),
+              ),
+              variant: BadgeVariant.secondary,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReporterSection(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        padding: const EdgeInsets.only(top: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: theme.colorScheme.outline.withOpacity(0.2),
+            ),
+          ),
+        ),
+        child: Text.rich(
+          TextSpan(
             children: [
-              Row(
-                children: [
-                  // Pet Image
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.grey[200],
-                    ),
-                    child: pet.photoUrls.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              pet.photoUrls.first,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  pet.type == 'dog' ? Icons.pets : Icons.pets,
-                                  size: 40,
-                                  color: Colors.grey[400],
-                                );
-                              },
-                            ),
-                          )
-                        : Icon(
-                            pet.type == 'dog' ? Icons.pets : Icons.pets,
-                            size: 40,
-                            color: Colors.grey[400],
-                          ),
-                  ),
-                  const SizedBox(width: 16),
-
-                  // Pet Details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              pet.name,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: pet.status == 'lost'
-                                    ? Colors.red.withOpacity(0.1)
-                                    : Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                pet.status.toUpperCase(),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: pet.status == 'lost' ? Colors.red : Colors.green,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${pet.breed} • ${pet.color}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Owner: ${pet.ownerName}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              const TextSpan(
+                text: 'Posted by ',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
-              const SizedBox(height: 12),
-
-              // Description
-              if (pet.description.isNotEmpty) ...[
-                Text(
-                  pet.description,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+              TextSpan(
+                text: pet.userName,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 12),
-              ],
-
-              // Additional Details
-              Row(
-                children: [
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      pet.address,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
               ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Last seen: ${DateFormat('MMM dd, yyyy').format(pet.lastSeenDate)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-
-              // Contact Info
-              if (pet.status == 'found') ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.phone,
-                        size: 16,
-                        color: Colors.blue[700],
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        pet.ownerPhone,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.blue[700],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ],
           ),
         ),
       ),
     );
   }
-} 
+
+  BadgeVariant _getBadgeVariant(PetStatus status) {
+    switch (status) {
+      case PetStatus.lost:
+        return BadgeVariant.destructive;
+      case PetStatus.found:
+        return BadgeVariant.secondary;
+      case PetStatus.reunited:
+        return BadgeVariant.primary;
+    }
+  }
+
+  Color _getStatusColor(BuildContext context) {
+    final theme = Theme.of(context);
+    switch (pet.status) {
+      case PetStatus.lost:
+        return theme.colorScheme.error;
+      case PetStatus.found:
+        return theme.colorScheme.secondary;
+      case PetStatus.reunited:
+        return theme.colorScheme.primary;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays == 0) return 'Today';
+    if (difference.inDays == 1) return 'Yesterday';
+    if (difference.inDays < 7) return '${difference.inDays} days ago';
+    
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+// Pet model (you'll need to create this)
+class Pet {
+  final String? name;
+  final String breed;
+  final String imageUrl;
+  final PetStatus status;
+  final PetLocation location;
+  final DateTime lastSeen;
+  final bool hasCollar;
+  final String collarColor;
+  final List<String> tags;
+  final String userName;
+
+  const Pet({
+    this.name,
+    required this.breed,
+    required this.imageUrl,
+    required this.status,
+    required this.location,
+    required this.lastSeen,
+    required this.hasCollar,
+    required this.collarColor,
+    required this.tags,
+    required this.userName,
+  });
+}
+
+class PetLocation {
+  final String address;
+
+  const PetLocation({required this.address});
+}
+
+enum PetStatus {
+  lost,
+  found,
+  reunited,
+  
+  String get name {
+    switch (this) {
+      case PetStatus.lost:
+        return 'lost';
+      case PetStatus.found:
+        return 'found';
+      case PetStatus.reunited:
+        return 'reunited';
+    }
+  }
+}
