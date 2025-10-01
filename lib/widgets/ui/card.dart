@@ -251,4 +251,3 @@ class StyledCard extends StatelessWidget {
       ),
     );
   }
-}

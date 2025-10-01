@@ -257,4 +257,3 @@ class _EnhancedTextareaState extends State<EnhancedTextarea> {
       ],
     );
   }
-}

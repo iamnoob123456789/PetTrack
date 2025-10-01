@@ -662,4 +662,3 @@ class _PetDetailsScreenState extends State<PetDetailsScreen> {
         return BadgeVariant.primary;
     }
   }
-}

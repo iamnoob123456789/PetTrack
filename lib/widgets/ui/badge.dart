@@ -144,4 +144,3 @@ class BadgeDimensions {
     required this.padding,
     required this.borderRadius,
   });
-}

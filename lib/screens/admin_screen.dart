@@ -375,4 +375,3 @@ class _TabItem {
     required this.label,
     required this.icon,
   });
-}

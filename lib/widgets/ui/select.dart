@@ -312,4 +312,3 @@ class SelectFormField extends FormField<String> {
             );
           },
         );
-}

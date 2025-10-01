@@ -404,4 +404,3 @@ class _MapScreenState extends State<MapScreen> {
         return BadgeVariant.primary;
     }
   }
-}
