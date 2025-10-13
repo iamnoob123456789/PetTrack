@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pets/lost_pets_screen.dart';
 import 'pets/found_pets_screen.dart';
 import 'pets/add_pet_screen.dart';
+import 'pets/matches_screen.dart';
 import 'profile/profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -19,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const LostPetsScreen(),
     const FoundPetsScreen(),
+    const MatchesScreen(),
     const AddPetScreen(),
     const ProfileScreen(),
   ];
@@ -95,6 +97,10 @@ class _HomeScreenState extends State<HomeScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.pets),
               label: 'Found Pets',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.check_circle_outline),
+              label: 'Matches',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.add_circle_outline),

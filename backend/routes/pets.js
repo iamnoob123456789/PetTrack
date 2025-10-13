@@ -1,10 +1,14 @@
 import express from "express";
-import { addPet, getPets } from "../controllers/petsController.js";
+import upload from "../middleware/upload.js";
+import { addLostPet, addFoundPet, getPets } from "../controllers/petsController.js";
 
 const router = express.Router();
 
-// Add new pet (JSON only, no multer)
-router.post("/", addPet);
+// Add lost pet
+router.post("/lost", upload, addLostPet);
+
+// Add found pet
+router.post("/found", upload, addFoundPet);
 
 // Get pets
 router.get("/", getPets);

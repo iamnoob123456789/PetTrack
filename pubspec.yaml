@@ -10,6 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^1.1.0
+  flutter_secure_storage: ^8.0.0 # for storing JWT token
+
   
   # State Management
   provider: ^6.1.1
@@ -24,7 +27,6 @@ dependencies:
   shared_preferences: ^2.2.2
   
   # HTTP & API
-  http: ^1.1.0
   
   # Location Services
   geolocator: ^10.1.0
