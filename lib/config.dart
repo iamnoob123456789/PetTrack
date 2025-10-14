@@ -5,13 +5,13 @@ class Config {
   // ✅ Backend URL depending on platform
   static String get backendUrl {
     if (kIsWeb) {
-      return 'http://localhost:8000'; // Web runs in browser
+      return 'http://localhost:5000'; // web -> Node backend
     } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000'; // Android Emulator
+      return 'http://10.0.2.2:5000'; // Android emulator -> Node backend
     } else if (Platform.isIOS) {
-      return 'http://localhost:8000'; // iOS Simulator
+      return 'http://localhost:5000'; // iOS simulator -> Node backend
     } else {
-      return 'http://192.168.1.10:8000'; // LAN IP for physical devices
+      return 'http://localhost:5000';
     }
   }
 

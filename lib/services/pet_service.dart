@@ -7,7 +7,6 @@ import '../config.dart';
 import '../models/pet.dart';
 
 class PetService extends ChangeNotifier {
-  // use Config.backendUrl from your config.dart
   String baseUrl = Config.backendUrl;
 
   List<Pet> _pets = [];
@@ -52,15 +51,16 @@ class PetService extends ChangeNotifier {
     String? breed,
     String? description,
     String? ownerPhone,
-    String? reporterPhone, // <-- added parameter
+    String? reporterPhone,
     String? address,
     DateTime? lastSeenDate,
     List<XFile>? images,
   }) async {
-    final url = Uri.parse('$baseUrl/${type == 'lost' ? 'pets/lost' : 'pets/found'}');
+    final url = Uri.parse('$baseUrl/pets'); // ✅ unified endpoint
 
     final user = FirebaseAuth.instance.currentUser;
     final token = user != null ? await user.getIdToken() : null;
+
     final headers = {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
@@ -68,20 +68,21 @@ class PetService extends ChangeNotifier {
 
     final body = {
       'name': name,
+      'type': type, // ✅ include pet type
       if (breed != null) 'breed': breed,
       if (description != null) 'description': description,
       if (ownerPhone != null) 'ownerPhone': ownerPhone,
       if (reporterPhone != null) 'reporterPhone': reporterPhone,
       if (address != null) 'address': address,
       if (lastSeenDate != null) 'lastSeenDate': lastSeenDate.toIso8601String(),
-      // images handled separately (multipart) if needed
     };
 
     final res = await http.post(url, headers: headers, body: jsonEncode(body));
+
     return {
       'success': res.statusCode == 200 || res.statusCode == 201,
       'message': res.body,
-      'statusCode': res.statusCode
+      'statusCode': res.statusCode,
     };
   }
 

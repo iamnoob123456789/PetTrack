@@ -2,13 +2,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:pet_track/config.dart';
-import 'package:pet_track/models/pet.dart';
-import 'package:pet_track/services/pet_service.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
 
 class AddPetScreen extends StatefulWidget {
   const AddPetScreen({Key? key}) : super(key: key);
@@ -22,7 +20,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
   final _nameController = TextEditingController();
   final _breedController = TextEditingController();
   final _descController = TextEditingController();
-  final _phoneController = TextEditingController(); // owner or reporter depending on type
+  final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   DateTime? _lastSeenDate;
   List<XFile> _images = [];
@@ -48,65 +46,76 @@ class _AddPetScreenState extends State<AddPetScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    // require at least one image
-    if (_images.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select at least one photo")),
-      );
-      return;
-    }
-
-    // additional required checks for lost
-    if (_petType == 'lost' && _phoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please add an owner contact phone for lost pets")),
-      );
-      return;
-    }
-
-    setState(() => _isSubmitting = true);
-
-    final payload = {
-      'name': _nameController.text.trim(),
-      'type': _petType, // lost or found
-      'breed': _breedController.text.trim().isEmpty ? null : _breedController.text.trim(),
-      'description': _descController.text.trim().isEmpty ? null : _descController.text.trim(),
-      // phone used as ownerPhone for lost, reporterPhone for found
-      _petType == 'lost' ? 'ownerPhone' : 'reporterPhone': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-      'address': _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-      'lastSeenDate': _lastSeenDate?.toIso8601String(),
-      // images will be handled inside PetService.addPet (XFile list)
-    };
-
-    // call PetService which previously used addPet; keep same method
-    final result = await PetService().addPet(
-      // validator guarantees name is non-null/filled, cast to String to satisfy signature
-      name: payload['name'] as String,
-      type: _petType,
-      breed: payload['breed'] as String?,
-      description: payload['description'] as String?,
-      ownerPhone: _petType == 'lost' ? payload['ownerPhone'] as String? : null,
-      reporterPhone: _petType == 'found' ? payload['reporterPhone'] as String? : null,
-      address: payload['address'] as String?,
-      lastSeenDate: _lastSeenDate,
-      images: _images,
+  if (_images.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please select at least one photo")),
     );
+    return;
+  }
 
-    setState(() => _isSubmitting = false);
+  if (_petType == 'lost' && _phoneController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please add an owner contact phone for lost pets")),
+    );
+    return;
+  }
 
-    if (result['success'] == true) {
+  setState(() => _isSubmitting = true);
+
+  try {
+    final uri = Uri.parse('http://localhost:5000/pets');
+    final request = http.MultipartRequest('POST', uri);
+
+    // Add text fields
+    request.fields['name'] = _nameController.text.trim();
+    request.fields['type'] = _petType;
+    if (_breedController.text.trim().isNotEmpty) request.fields['breed'] = _breedController.text.trim();
+    if (_descController.text.trim().isNotEmpty) request.fields['description'] = _descController.text.trim();
+    if (_phoneController.text.trim().isNotEmpty) {
+      request.fields[_petType == 'lost' ? 'ownerPhone' : 'reporterPhone'] = _phoneController.text.trim();
+    }
+    if (_addressController.text.trim().isNotEmpty) request.fields['address'] = _addressController.text.trim();
+    if (_lastSeenDate != null) request.fields['lastSeenDate'] = _lastSeenDate!.toIso8601String();
+
+    // Add image files (works on web + mobile)
+    for (final image in _images) {
+      final bytes = await image.readAsBytes();
+      final mimeType = lookupMimeType(image.name) ?? 'application/octet-stream';
+      final mimeParts = mimeType.split('/');
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'files',           // must match multer backend field name
+          bytes,
+          filename: image.name,
+          contentType: MediaType(mimeParts[0], mimeParts[1]),
+        ),
+      );
+    }
+
+    final response = await request.send();
+    final respStr = await response.stream.bytesToString();
+
+    if (response.statusCode == 201) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Pet added successfully")),
       );
       Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed: ${result['message']}")),
+        SnackBar(content: Text("Failed: $respStr")),
       );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error: $e")),
+    );
+  } finally {
+    setState(() => _isSubmitting = false);
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +128,6 @@ class _AddPetScreenState extends State<AddPetScreen> {
           key: _formKey,
           child: Column(
             children: [
-              // Pet type toggle
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -137,25 +145,19 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: "Pet Name"),
                 validator: (v) => v == null || v.isEmpty ? "Required" : null,
               ),
-
               TextFormField(
                 controller: _breedController,
                 decoration: const InputDecoration(labelText: "Breed (optional)"),
               ),
-
               TextFormField(
                 controller: _descController,
-                // cannot use `const` with a runtime expression
                 decoration: InputDecoration(labelText: isLost ? "Description (optional)" : "Description / notes"),
               ),
-
-              // phone field meaning depends on pet type
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
@@ -167,12 +169,10 @@ class _AddPetScreenState extends State<AddPetScreen> {
                   return null;
                 },
               ),
-
               TextFormField(
                 controller: _addressController,
                 decoration: const InputDecoration(labelText: "Address (optional)"),
               ),
-
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -189,15 +189,12 @@ class _AddPetScreenState extends State<AddPetScreen> {
                         firstDate: DateTime(2020),
                         lastDate: DateTime(2100),
                       );
-                      if (picked != null) {
-                        setState(() => _lastSeenDate = picked);
-                      }
+                      if (picked != null) setState(() => _lastSeenDate = picked);
                     },
                     child: const Text("Select Date"),
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
@@ -210,8 +207,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                         width: 100,
                         height: 100,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.broken_image, size: 100, color: Colors.red),
+                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100, color: Colors.red),
                       );
                     } else {
                       return Image.file(
@@ -219,8 +215,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                         width: 100,
                         height: 100,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.broken_image, size: 100, color: Colors.red),
+                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100, color: Colors.red),
                       );
                     }
                   }),
@@ -230,7 +225,6 @@ class _AddPetScreenState extends State<AddPetScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 20),
               _isSubmitting
                   ? const CircularProgressIndicator()

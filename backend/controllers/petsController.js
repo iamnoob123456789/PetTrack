@@ -35,18 +35,21 @@ export const addLostPet = async (req, res) => {
       photoUrls.push(result.secure_url || result.url);
     }
 
+   
     const petData = {
-      name,
-      type,
-      breed: req.body.breed,
-      description: req.body.description,
-      ownerName: req.body.ownerName,
-      ownerPhone: req.body.ownerPhone,
-      ownerEmail: req.body.ownerEmail,
-      lastSeenDate: req.body.lastSeenDate ? new Date(req.body.lastSeenDate) : undefined,
-      address: req.body.address,
-      photoUrls,
-    };
+  name,
+  type,
+  breed: req.body.breed,
+  description: req.body.description,
+  ownerName: req.body.ownerName,
+  ownerPhone: req.body.ownerPhone,
+  ownerEmail: req.body.ownerEmail,
+  lastSeenDate: req.body.lastSeenDate ? new Date(req.body.lastSeenDate) : undefined,
+  address: req.body.address,
+  photoUrls,
+  ownerId: req.user?.id || '0', // <--- add this
+};
+
 
     const saved = await Pet.create(petData);
     return res.status(201).json({ message: 'Lost pet added', pet: saved });

@@ -23,7 +23,7 @@ class _LostPetsScreenState extends State<LostPetsScreen> {
   }
 
   Future<List<Pet>> _fetchPets() async {
-    final response = await http.get(Uri.parse('${Config.backendUrl}/api/pets'));
+    final response = await http.get(Uri.parse('${Config.backendUrl}/pets'));
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
