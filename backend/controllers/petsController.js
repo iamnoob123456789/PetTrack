@@ -60,6 +60,7 @@ export const addLostPet = async (req, res) => {
 };
 
 // add a found pet and run matching
+// add a found pet and run matching
 export const addFoundPet = async (req, res) => {
   try {
     console.log('addFoundPet body:', req.body);
@@ -97,14 +98,12 @@ export const addFoundPet = async (req, res) => {
       location: (!isNaN(latitude) && !isNaN(longitude)) ? { type: 'Point', coordinates: [longitude, latitude] } : undefined,
     };
 
-    //const foundPet = await Pet.create(petData);
     const newPet = new Pet(petData);
-newPet.type = 'found';
-await newPet.save();
-const foundPet = newPet;
+    newPet.type = 'found';
+    await newPet.save();
+    const foundPet = newPet;
 
-
-    // call matching service with found pet data
+    // ✅ Call matching service with correct field for FastAPI
     let matches = [];
     try {
       const response = await fetch(MATCHING_API_URL, {
@@ -117,7 +116,8 @@ const foundPet = newPet;
             name: foundPet.name,
             breed: foundPet.breed,
             description: foundPet.description,
-            photoUrls: foundPet.photoUrls,
+            // Send first image as `image_url` for FastAPI compatibility
+            image_url: foundPet.photoUrls?.[0] || null,
             location: foundPet.location
           }
         })
@@ -134,33 +134,41 @@ const foundPet = newPet;
     }
 
     // process matches above threshold
-    const createdMatches = [];
-    for (const m of matches) {
-      const score = typeof m.score === 'number' ? m.score : parseFloat(m.score);
-      if (isNaN(score) || score < MATCH_THRESHOLD) continue;
+   // process matches above threshold
+const createdMatches = [];
+for (const m of matches) {
+  const score = typeof m.score === 'number' ? m.score : parseFloat(m.score);
+  if (isNaN(score) || score < MATCH_THRESHOLD) continue;
 
-      const lostPet = await Pet.findOne({ _id: m.lostId, type: 'lost' });
-      if (!lostPet) continue;
+  const lostPet = await Pet.findOne({ _id: m.lostId, type: 'lost' });
+  if (!lostPet) continue;
 
-      const matchDoc = await Match.create({
-        lostPetId: lostPet._id,
-        foundPetId: foundPet._id,
-        score,
-        createdAt: new Date(),
-      });
+ if (!lostPet?._id || !foundPet?._id) {
+  console.warn("Skipping invalid match (missing IDs)");
+  continue;
+}
 
-      // mark lost pet as matched (remove or update status)
-      await Pet.deleteOne({ _id: lostPet._id });
+const matchDoc = await Match.create({
+  lostPet: lostPet._id,
+  foundPet: foundPet._id,
+  score,
+  createdAt: new Date(),
+});
 
-      sendNotification(lostPet, foundPet, score);
-      createdMatches.push({ match: matchDoc, lostPet, score });
-    }
+
+  await Pet.deleteOne({ _id: lostPet._id });
+
+  sendNotification(lostPet, foundPet, score);
+  createdMatches.push({ match: matchDoc, lostPet, score });
+}
+
 
     return res.status(201).json({
       message: 'Found pet added',
       foundPet,
       matches: createdMatches
     });
+
   } catch (err) {
     console.error('Error in addFoundPet:', err);
     return res.status(500).json({ error: 'An error occurred while adding the found pet' });

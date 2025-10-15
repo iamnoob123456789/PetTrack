@@ -1,11 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from models.pet import Pet
 from matching_engine import match_score
 from database import pets_collection, matches_collection
 from bson import ObjectId
-from fastapi import Request
 
 app = FastAPI()
 
@@ -45,6 +44,10 @@ def add_pet(pet: Pet):
     if not status:
         raise HTTPException(status_code=400, detail="Missing pet status/type")
 
+    # 🩹 Fix missing image_url before matching
+    if "image_url" not in pet_dict and "photoUrls" in pet_dict and pet_dict["photoUrls"]:
+        pet_dict["image_url"] = pet_dict["photoUrls"][0]
+
     inserted = pets_collection.insert_one(pet_dict)
     pet_id = inserted.inserted_id
 
@@ -53,6 +56,13 @@ def add_pet(pet: Pet):
         lost_pets = list(pets_collection.find({"$or": [{"status": "lost"}, {"type": "lost"}]}))
         created_matches = []
         for lost in lost_pets:
+            # 🩹 Ensure both sides have image_url for matching
+            if "image_url" not in lost and "photoUrls" in lost and lost["photoUrls"]:
+                lost["image_url"] = lost["photoUrls"][0]
+
+            if "image_url" not in pet_dict and "photoUrls" in pet_dict and pet_dict["photoUrls"]:
+                pet_dict["image_url"] = pet_dict["photoUrls"][0]
+
             try:
                 score = match_score(lost, pet_dict)
                 score_val = float(score)
@@ -145,32 +155,33 @@ def post_matches(payload: dict):
 
 @app.post("/match_score")
 async def match_score_api(request: Request):
-    try:
-        data = await request.json()
-        pet_data = data.get("pet")
+    data = await request.json()
+    pet_data = data.get("pet")
+    if not pet_data:
+        raise HTTPException(status_code=400, detail="Missing pet data")
 
-        if not pet_data:
-            raise HTTPException(status_code=400, detail="Missing pet data")
+    # ensure image_url exists
+    if "image_url" not in pet_data and "photoUrls" in pet_data and pet_data["photoUrls"]:
+        pet_data["image_url"] = pet_data["photoUrls"][0]
 
-        # Fetch all lost pets to compare against
-        lost_pets = list(pets_collection.find({"$or": [{"status": "lost"}, {"type": "lost"}]}))
-        matches = []
+    lost_pets = list(pets_collection.find({"$or": [{"status": "lost"}, {"type": "lost"}]}))
+    out_matches = []
 
-        for lost in lost_pets:
-            try:
-                score = match_score(lost, pet_data)
-            except Exception as e:
-                print("Matching error:", e)
-                continue
+    for lost in lost_pets:
+        if "image_url" not in lost and "photoUrls" in lost and lost["photoUrls"]:
+            lost["image_url"] = lost["photoUrls"][0]
 
-            if isinstance(score, (int, float)) and score >= 0.7:
-                matches.append({
-                    "lostId": str(lost["_id"]),
-                    "score": score
-                })
+        try:
+            score_val = float(match_score(lost, pet_data))
+        except Exception as e:
+            print("Matching error:", e)
+            continue
 
-        return {"matches": matches}
+        if score_val >= 0.7:
+            out_matches.append({
+                "lostId": str(lost["_id"]),
+                "score": score_val
+            })
 
-    except Exception as e:
-        print("Error in match_score_api:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+    # ⚡ Node expects a **list** not an object with 'matches'
+    return out_matches
