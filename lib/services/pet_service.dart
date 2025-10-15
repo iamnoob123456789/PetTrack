@@ -28,7 +28,12 @@ class PetService extends ChangeNotifier {
     notifyListeners();
     try {
       final uri = Uri.parse('$baseUrl/pets${type != null ? '?type=$type' : ''}');
-      final resp = await http.get(uri);
+      final user = FirebaseAuth.instance.currentUser;
+      final token = user != null ? await user.getIdToken() : null;
+      final headers = <String, String>{
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode == 200) {
         final List<dynamic> data = json.decode(resp.body);
         _pets = data.map((e) => Pet.fromJson(e)).toList();
@@ -56,11 +61,11 @@ class PetService extends ChangeNotifier {
     DateTime? lastSeenDate,
     List<XFile>? images,
   }) async {
-    final url = Uri.parse('$baseUrl/pets'); // ✅ unified endpoint
+    final endpoint = type == 'lost' ? 'pets/lost' : 'pets/found';
+    final url = Uri.parse('${Config.backendUrl}/$endpoint');
 
     final user = FirebaseAuth.instance.currentUser;
     final token = user != null ? await user.getIdToken() : null;
-
     final headers = {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
@@ -68,7 +73,6 @@ class PetService extends ChangeNotifier {
 
     final body = {
       'name': name,
-      'type': type, // ✅ include pet type
       if (breed != null) 'breed': breed,
       if (description != null) 'description': description,
       if (ownerPhone != null) 'ownerPhone': ownerPhone,
@@ -78,11 +82,10 @@ class PetService extends ChangeNotifier {
     };
 
     final res = await http.post(url, headers: headers, body: jsonEncode(body));
-
     return {
       'success': res.statusCode == 200 || res.statusCode == 201,
       'message': res.body,
-      'statusCode': res.statusCode,
+      'statusCode': res.statusCode
     };
   }
 

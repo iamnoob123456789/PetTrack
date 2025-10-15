@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/match.dart';
 import '../../services/api_service.dart';
-
 
 class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
@@ -11,7 +9,7 @@ class MatchesScreen extends StatefulWidget {
 }
 
 class _MatchesScreenState extends State<MatchesScreen> {
-  late Future<List<MatchModel>> _matchesFuture;
+  late Future<List<dynamic>> _matchesFuture;
 
   @override
   void initState() {
@@ -22,36 +20,34 @@ class _MatchesScreenState extends State<MatchesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Matches")),
-      body: FutureBuilder<List<MatchModel>>(
+      appBar: AppBar(title: const Text('Matches')),
+      body: FutureBuilder<List<dynamic>>(
         future: _matchesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
+            return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No matches found"));
+            return const Center(child: Text('No matches yet'));
           }
-
           final matches = snapshot.data!;
           return ListView.builder(
             itemCount: matches.length,
             itemBuilder: (context, index) {
-              final match = matches[index];
-              return Card(
-                margin: const EdgeInsets.all(8),
-                child: ListTile(
-                  title: Text("Found Pet: ${match.foundPet.name} (${match.foundPet.type})"),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Lost Pet: ${match.lostPet.name} (${match.lostPet.type})"),
-                      Text("Description: ${match.foundPet.description}"),
-                      Text("Match Score: ${match.score}"),
-                    ],
-                  ),
-                ),
+              final m = matches[index];
+              final lost = m['lostPet'] ?? m['lost_pet'] ?? m['lost'] ?? {};
+              final found = m['foundPet'] ?? m['found_pet'] ?? m['found'] ?? {};
+              final score = m['score'] ?? m['matchScore'] ?? '';
+              return ListTile(
+                leading: lost['images'] != null && lost['images'].isNotEmpty
+                    ? Image.network(lost['images'][0], width: 56, height: 56, fit: BoxFit.cover)
+                    : const Icon(Icons.pets),
+                title: Text(lost['name'] ?? found['name'] ?? 'Unknown'),
+                subtitle: Text('Score: $score'),
+                onTap: () {
+                  // implement navigation to detail if needed
+                },
               );
             },
           );

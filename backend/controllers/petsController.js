@@ -3,13 +3,12 @@ import Match from '../models/Match.js';
 import { uploadToCloudinary } from '../config/cloudinary.js';
 import fetch from 'node-fetch'; // install node-fetch if Node < 18
 
-const MATCHING_API_URL = process.env.MATCHING_API_URL || 'http://localhost:8000/match_score';
+const MATCHING_API_URL = process.env.MATCHING_API_URL || "http://localhost:8000/match_score";
 const VALID_TYPES = ['lost', 'found'];
 const MATCH_THRESHOLD = parseFloat(process.env.MATCH_THRESHOLD || '0.7');
 
-// simple notification placeholder
+// simple in-app notification placeholder
 function sendNotification(lostPet, foundPet, score) {
-  // implement push/email/SMS here; for now just log
   console.log(`Notify owner ${lostPet.ownerName} (${lostPet.ownerEmail || lostPet.ownerPhone}) — possible match with ${foundPet.ownerName}. score=${score}`);
 }
 
@@ -24,7 +23,6 @@ export const addLostPet = async (req, res) => {
     if (!name) return res.status(400).json({ error: 'Missing name' });
     if (!VALID_TYPES.includes(type) || type !== 'lost') return res.status(400).json({ error: 'Invalid type (must be lost)' });
 
-    // upload files
     const files = req.files || [];
     if (files.length === 0) return res.status(400).json({ error: 'No files uploaded' });
     if (files.length > 5) return res.status(400).json({ error: 'Max 5 images allowed' });
@@ -35,21 +33,23 @@ export const addLostPet = async (req, res) => {
       photoUrls.push(result.secure_url || result.url);
     }
 
-   
-    const petData = {
-  name,
-  type,
-  breed: req.body.breed,
-  description: req.body.description,
-  ownerName: req.body.ownerName,
-  ownerPhone: req.body.ownerPhone,
-  ownerEmail: req.body.ownerEmail,
-  lastSeenDate: req.body.lastSeenDate ? new Date(req.body.lastSeenDate) : undefined,
-  address: req.body.address,
-  photoUrls,
-  ownerId: req.user?.id || '0', // <--- add this
-};
+    const latitude = parseFloat(req.body.latitude);
+    const longitude = parseFloat(req.body.longitude);
 
+    const petData = {
+      name,
+      type,
+      breed: req.body.breed,
+      description: req.body.description,
+      ownerName: req.body.ownerName,
+      ownerPhone: req.body.ownerPhone,
+      ownerEmail: req.body.ownerEmail,
+      lastSeenDate: req.body.lastSeenDate ? new Date(req.body.lastSeenDate) : undefined,
+      address: req.body.address,
+      photoUrls,
+      ownerId: req.user?.id || '0', // assuming user is logged in
+      location: (!isNaN(latitude) && !isNaN(longitude)) ? { type: 'Point', coordinates: [longitude, latitude] } : undefined,
+    };
 
     const saved = await Pet.create(petData);
     return res.status(201).json({ message: 'Lost pet added', pet: saved });
@@ -80,21 +80,29 @@ export const addFoundPet = async (req, res) => {
       photoUrls.push(result.secure_url || result.url);
     }
 
+    const latitude = parseFloat(req.body.latitude);
+    const longitude = parseFloat(req.body.longitude);
+
     const petData = {
       name,
       type,
       breed: req.body.breed,
       description: req.body.description,
-      ownerName: req.body.ownerName,
-      ownerPhone: req.body.ownerPhone,
-      ownerEmail: req.body.ownerEmail,
+      reporterName: req.body.reporterName,
+      reporterPhone: req.body.reporterPhone,
       lastSeenDate: req.body.lastSeenDate ? new Date(req.body.lastSeenDate) : undefined,
       address: req.body.address,
       photoUrls,
+      reporterId: req.user?.id || '0',
+      location: (!isNaN(latitude) && !isNaN(longitude)) ? { type: 'Point', coordinates: [longitude, latitude] } : undefined,
     };
 
-    // save found pet
-    const foundPet = await Pet.create(petData);
+    //const foundPet = await Pet.create(petData);
+    const newPet = new Pet(petData);
+newPet.type = 'found';
+await newPet.save();
+const foundPet = newPet;
+
 
     // call matching service with found pet data
     let matches = [];
@@ -110,6 +118,7 @@ export const addFoundPet = async (req, res) => {
             breed: foundPet.breed,
             description: foundPet.description,
             photoUrls: foundPet.photoUrls,
+            location: foundPet.location
           }
         })
       });
@@ -118,7 +127,6 @@ export const addFoundPet = async (req, res) => {
         console.warn('Matching API returned non-ok status', response.status);
       } else {
         const data = await response.json();
-        // Expect data to be array of { lostId, score } or similar
         matches = Array.isArray(data) ? data : (data.matches || []);
       }
     } catch (matchErr) {
@@ -129,14 +137,11 @@ export const addFoundPet = async (req, res) => {
     const createdMatches = [];
     for (const m of matches) {
       const score = typeof m.score === 'number' ? m.score : parseFloat(m.score);
-      if (isNaN(score)) continue;
-      if (score < MATCH_THRESHOLD) continue;
+      if (isNaN(score) || score < MATCH_THRESHOLD) continue;
 
-      // fetch lost pet
       const lostPet = await Pet.findOne({ _id: m.lostId, type: 'lost' });
       if (!lostPet) continue;
 
-      // create Match record
       const matchDoc = await Match.create({
         lostPetId: lostPet._id,
         foundPetId: foundPet._id,
@@ -144,12 +149,10 @@ export const addFoundPet = async (req, res) => {
         createdAt: new Date(),
       });
 
-      // remove lost pet (or mark removed/matched depending on business logic)
+      // mark lost pet as matched (remove or update status)
       await Pet.deleteOne({ _id: lostPet._id });
 
-      // notify owner
       sendNotification(lostPet, foundPet, score);
-
       createdMatches.push({ match: matchDoc, lostPet, score });
     }
 

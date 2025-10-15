@@ -1,4 +1,3 @@
-# main.py
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
@@ -6,21 +5,28 @@ from models.pet import Pet
 from matching_engine import match_score
 from database import pets_collection, matches_collection
 from bson import ObjectId
+from fastapi import Request
 
 app = FastAPI()
 
-# allow frontend dev origins (add others if needed)
+# Allow frontend origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5000", "http://localhost:8000", "http://localhost:4200", "http://localhost:8080"],
+    allow_origins=[
+        "http://localhost:5000",
+        "http://localhost:8000",
+        "http://localhost:4200",
+        "http://localhost:8080",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 def _get_status_from_pet(pet_dict):
-    # support both `status` and `type`
+    # Support both `status` and `type`
     return pet_dict.get("status") or pet_dict.get("type")
+
 
 @app.on_event("startup")
 async def _log_routes():
@@ -30,7 +36,8 @@ async def _log_routes():
             print(f"  PATH: {route.path}  METHODS: {sorted(route.methods)}")
     print("Docs: http://localhost:8000/docs (or change port)")
 
-# POST /pets - add lost or found
+
+# POST /pets - add lost or found pet
 @app.post("/pets")
 def add_pet(pet: Pet):
     pet_dict = pet.dict()
@@ -38,44 +45,41 @@ def add_pet(pet: Pet):
     if not status:
         raise HTTPException(status_code=400, detail="Missing pet status/type")
 
-    # insert to DB
     inserted = pets_collection.insert_one(pet_dict)
     pet_id = inserted.inserted_id
 
-    # if found, run matching against lost pets
+    # If found, run matching against lost pets
     if str(status).lower() == "found":
         lost_pets = list(pets_collection.find({"$or": [{"status": "lost"}, {"type": "lost"}]}))
         created_matches = []
         for lost in lost_pets:
             try:
                 score = match_score(lost, pet_dict)
+                score_val = float(score)
             except Exception as e:
                 print("matching error:", e)
                 continue
-            try:
-                score_val = float(score)
-            except:
-                continue
+
             if score_val >= 0.7:
                 match_doc = {
                     "lost_pet_id": lost["_id"],
                     "found_pet_id": pet_id,
-                    "match_score": score_val
+                    "match_score": score_val,
                 }
                 matches_collection.insert_one(match_doc)
-                # remove matched lost pet (business logic)
                 pets_collection.delete_one({"_id": lost["_id"]})
                 created_matches.append({
                     "lost_pet_id": str(lost["_id"]),
                     "found_pet_id": str(pet_id),
-                    "match_score": score_val
+                    "match_score": score_val,
                 })
 
         return {"message": "Found pet added", "pet_id": str(pet_id), "matches": created_matches}
 
     return {"message": "Pet added", "pet_id": str(pet_id)}
 
-# GET /pets  optionally filter by ?type=lost|found
+
+# GET /pets - list pets (optional filter ?type=lost|found)
 @app.get("/pets")
 def get_pets(type: str = None):
     query = {}
@@ -88,7 +92,8 @@ def get_pets(type: str = None):
         out.append(d)
     return out
 
-# GET /pets/matches
+
+# GET /pets/matches - view all matches
 @app.get("/pets/matches")
 def get_matches():
     docs = list(matches_collection.find().sort("match_score", -1))
@@ -98,6 +103,74 @@ def get_matches():
             "_id": str(m.get("_id")),
             "lost_pet_id": str(m.get("lost_pet_id")),
             "found_pet_id": str(m.get("found_pet_id")),
-            "match_score": m.get("match_score")
+            "match_score": m.get("match_score"),
         })
     return {"matches": out}
+
+
+# ✅ NEW: POST /pets/matches - run live matching for a found/lost pet
+@app.post("/pets/matches")
+def post_matches(payload: dict):
+    """
+    Accepts a pet payload and returns list of potential matches
+    """
+    pet_data = payload.get("pet")
+    pet_type = str(payload.get("type", "")).lower()
+
+    if not pet_data:
+        raise HTTPException(status_code=400, detail="Missing pet data")
+
+    query_type = "lost" if pet_type == "found" else "found"
+    other_pets = list(pets_collection.find({
+        "$or": [{"type": query_type}, {"status": query_type}]
+    }))
+
+    matches = []
+    for other in other_pets:
+        try:
+            score = match_score(pet_data, other)
+            score_val = float(score)
+        except Exception as e:
+            print("Error computing match:", e)
+            continue
+
+        if score_val >= 0.7:
+            matches.append({
+                "id": str(other["_id"]),
+                "score": score_val
+            })
+
+    return {"matches": matches}
+
+
+@app.post("/match_score")
+async def match_score_api(request: Request):
+    try:
+        data = await request.json()
+        pet_data = data.get("pet")
+
+        if not pet_data:
+            raise HTTPException(status_code=400, detail="Missing pet data")
+
+        # Fetch all lost pets to compare against
+        lost_pets = list(pets_collection.find({"$or": [{"status": "lost"}, {"type": "lost"}]}))
+        matches = []
+
+        for lost in lost_pets:
+            try:
+                score = match_score(lost, pet_data)
+            except Exception as e:
+                print("Matching error:", e)
+                continue
+
+            if isinstance(score, (int, float)) and score >= 0.7:
+                matches.append({
+                    "lostId": str(lost["_id"]),
+                    "score": score
+                })
+
+        return {"matches": matches}
+
+    except Exception as e:
+        print("Error in match_score_api:", e)
+        raise HTTPException(status_code=500, detail=str(e))
