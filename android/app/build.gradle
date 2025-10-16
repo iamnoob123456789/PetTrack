@@ -33,7 +33,7 @@ android {
 
     defaultConfig {
     applicationId "com.example.pet_track"  // <-- match JSON exactly
-    minSdk = 21
+    minSdk = 23
     targetSdk = 36
     versionCode flutterVersionCode.toInteger()
     versionName flutterVersionName

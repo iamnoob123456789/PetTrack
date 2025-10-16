@@ -44,33 +44,26 @@ def add_pet(pet: Pet):
     if not status:
         raise HTTPException(status_code=400, detail="Missing pet status/type")
 
-    # 🩹 Fix missing image_url before matching
+    # Normalize image fields
     if "image_url" not in pet_dict and "photoUrls" in pet_dict and pet_dict["photoUrls"]:
         pet_dict["image_url"] = pet_dict["photoUrls"][0]
+    if "photoUrls" not in pet_dict and "image_url" in pet_dict:
+        pet_dict["photoUrls"] = [pet_dict["image_url"]]
 
     inserted = pets_collection.insert_one(pet_dict)
     pet_id = inserted.inserted_id
 
-    # If found, run matching against lost pets
+    # Run matches only if it's a found pet
     if str(status).lower() == "found":
         lost_pets = list(pets_collection.find({"$or": [{"status": "lost"}, {"type": "lost"}]}))
         created_matches = []
         for lost in lost_pets:
-            # 🩹 Ensure both sides have image_url for matching
+            # ensure lost has image_url
             if "image_url" not in lost and "photoUrls" in lost and lost["photoUrls"]:
                 lost["image_url"] = lost["photoUrls"][0]
 
-            if "image_url" not in pet_dict and "photoUrls" in pet_dict and pet_dict["photoUrls"]:
-                pet_dict["image_url"] = pet_dict["photoUrls"][0]
-
-            try:
-                score = match_score(lost, pet_dict)
-                score_val = float(score)
-            except Exception as e:
-                print("matching error:", e)
-                continue
-
-            if score_val >= 0.7:
+            score_val = match_score(lost, pet_dict)
+            if score_val >= 0.85:  # strict threshold
                 match_doc = {
                     "lost_pet_id": lost["_id"],
                     "found_pet_id": pet_id,
@@ -87,6 +80,7 @@ def add_pet(pet: Pet):
         return {"message": "Found pet added", "pet_id": str(pet_id), "matches": created_matches}
 
     return {"message": "Pet added", "pet_id": str(pet_id)}
+
 
 
 # GET /pets - list pets (optional filter ?type=lost|found)
