@@ -11,6 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.1.0
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
   flutter_secure_storage: ^8.0.0 # for storing JWT token
 
   
