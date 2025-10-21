@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'screens/splash_screen.dart';
-import 'services/pet_service.dart';
-import 'services/location_service.dart';
-import 'services/auth_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'screens/splash_screen.dart';
+import 'services/auth_service.dart';
+import 'services/pet_service.dart';
+import 'services/location_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +26,7 @@ Future<void> main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
       systemNavigationBarColor: Colors.white,
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
@@ -60,6 +60,17 @@ class PetTrackApp extends StatelessWidget {
       useMaterial3: true,
       primarySwatch: Colors.blue,
       primaryColor: const Color(0xFF2196F3),
+      scaffoldBackgroundColor: Colors.grey[50],
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.black87),
+        titleTextStyle: TextStyle(
+          color: Colors.black87,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       colorScheme: ColorScheme.fromSeed(
         seedColor: const Color(0xFF2196F3),
         brightness: Brightness.light,
@@ -67,3 +78,4 @@ class PetTrackApp extends StatelessWidget {
     );
   }
 }
+

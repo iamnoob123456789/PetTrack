@@ -14,8 +14,8 @@ dependencies:
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
   flutter_secure_storage: ^8.0.0 # for storing JWT token
-
-  
+  webview_flutter: ^4.12.0
+  geocoding: ^3.0.0
   # State Management
   provider: ^6.1.1
   
@@ -32,7 +32,6 @@ dependencies:
   
   # Location Services
   geolocator: ^10.1.0
-  geocoding: ^2.1.1
   
   # Camera & Image
   image_picker: ^1.1.2  

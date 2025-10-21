@@ -39,7 +39,7 @@ class PetDetailScreen extends StatelessWidget {
             _buildOwnerInfoCard(context),
             const SizedBox(height: 16),
             _buildLocationCard(context),
-            if (pet.status == 'found') _buildContactButtons(),
+            if (pet.type == 'found') _buildContactButtons(),
           ],
         ),
       ),
@@ -75,7 +75,7 @@ class PetDetailScreen extends StatelessWidget {
   Widget _buildPetPlaceholder() {
     return Center(
       child: Icon(
-        pet.type == 'dog' ? Icons.pets : Icons.pets,
+        Icons.pets, // Simplified placeholder
         size: 80,
         color: Colors.grey[400],
       ),
@@ -83,7 +83,9 @@ class PetDetailScreen extends StatelessWidget {
   }
 
   Widget _buildStatusBadge() {
-    final isLost = pet.status == 'lost';
+    final isLost = pet.type == 'lost';
+    final statusText = pet.status ?? pet.type; // Fallback to type if status is null
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -94,7 +96,7 @@ class PetDetailScreen extends StatelessWidget {
         ),
       ),
       child: Text(
-        pet.status.toUpperCase(),
+        statusText.toUpperCase(),
         style: TextStyle(
           color: isLost ? Colors.red : Colors.green,
           fontWeight: FontWeight.bold,
@@ -120,11 +122,11 @@ class PetDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildInfoRow('Name', pet.name),
             _buildInfoRow('Type', pet.type.toUpperCase()),
-            _buildInfoRow('Breed', pet.breed),
-            _buildInfoRow('Color', pet.color),
-            if (pet.collarColor.isNotEmpty)
-              _buildInfoRow('Collar Color', pet.collarColor),
-            if (pet.description.isNotEmpty) ...[
+            _buildInfoRow('Breed', pet.breed ?? 'N/A'),
+            _buildInfoRow('Color', pet.color ?? 'N/A'),
+            if (pet.collarColor != null && pet.collarColor!.isNotEmpty)
+              _buildInfoRow('Collar Color', pet.collarColor!),
+            if (pet.description != null && pet.description!.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
                 'Description',
@@ -133,7 +135,7 @@ class PetDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(pet.description),
+              Text(pet.description!),
             ],
           ],
         ),
@@ -155,9 +157,9 @@ class PetDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('Name', pet.ownerName),
-            _buildInfoRow('Phone', pet.ownerPhone),
-            _buildInfoRow('Email', pet.ownerEmail),
+            _buildInfoRow('Name', pet.ownerName ?? 'N/A'),
+            _buildInfoRow('Phone', pet.ownerPhone ?? 'N/A'),
+            _buildInfoRow('Email', pet.ownerEmail ?? 'N/A'),
           ],
         ),
       ),
@@ -178,9 +180,11 @@ class PetDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('Address', pet.address),
-            _buildInfoRow('Last Seen', _dateFormat.format(pet.lastSeenDate)),
-            _buildInfoRow('Posted', _dateFormat.format(pet.createdAt)),
+            _buildInfoRow('Address', pet.address ?? 'N/A'),
+            if (pet.lastSeenDate != null)
+              _buildInfoRow('Last Seen', _dateFormat.format(pet.lastSeenDate!)),
+            if (pet.createdAt != null)
+              _buildInfoRow('Posted', _dateFormat.format(pet.createdAt!)),
           ],
         ),
       ),
@@ -193,7 +197,7 @@ class PetDetailScreen extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: _callOwner,
+            onPressed: (pet.ownerPhone != null) ? _callOwner : null,
             icon: const Icon(Icons.phone),
             label: const Text('Call Owner'),
             style: ElevatedButton.styleFrom(
@@ -206,7 +210,7 @@ class PetDetailScreen extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: _messageOwner,
+            onPressed: (pet.ownerPhone != null) ? _messageOwner : null,
             icon: const Icon(Icons.message),
             label: const Text('Send Message'),
             style: OutlinedButton.styleFrom(
@@ -248,6 +252,7 @@ class PetDetailScreen extends StatelessWidget {
   }
 
   Future<void> _callOwner() async {
+    if (pet.ownerPhone == null) return;
     final phoneUrl = Uri.parse('tel:${pet.ownerPhone}');
     if (await canLaunchUrl(phoneUrl)) {
       await launchUrl(phoneUrl);
@@ -255,6 +260,7 @@ class PetDetailScreen extends StatelessWidget {
   }
 
   Future<void> _messageOwner() async {
+    if (pet.ownerPhone == null) return;
     final smsUrl = Uri.parse('sms:${pet.ownerPhone}');
     if (await canLaunchUrl(smsUrl)) {
       await launchUrl(smsUrl);
@@ -263,6 +269,6 @@ class PetDetailScreen extends StatelessWidget {
 
   Future<void> _sharePetDetails() async {
     // Implement share functionality using share_plus package
-    // Example: await Share.share('Check out this ${pet.status} pet: ${pet.name}');
+    // Example: await Share.share('Check out this ${pet.type} pet: ${pet.name}');
   }
 }

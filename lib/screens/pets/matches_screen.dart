@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../services/api_service.dart';
+import 'package:pet_track/models/mock_data.dart';
+import 'package:pet_track/models/pet.dart';
+import 'package:pet_track/widgets/pet_list_card.dart';
 
 class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
@@ -9,118 +11,93 @@ class MatchesScreen extends StatefulWidget {
 }
 
 class _MatchesScreenState extends State<MatchesScreen> {
-  late Future<List<dynamic>> _matchesFuture;
+  List<Pet> _allPets = [];
+  List<Pet> _filteredPets = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _matchesFuture = ApiService().fetchMatches();
+    // Using mock data for now
+    _allPets = mockPets;
+    _filteredPets = _allPets;
+    _searchController.addListener(_filterPets);
   }
 
-  /// Builds a pet info column
-  Widget _buildPetInfo(Map<String, dynamic> pet, String label) {
-    if (pet.isEmpty) return const SizedBox.shrink();
+  void _filterPets() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredPets = _allPets.where((pet) {
+        return pet.name.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
 
-    final imageUrl = (pet['photoUrls'] != null && pet['photoUrls'].isNotEmpty)
-        ? pet['photoUrls'][0]
-        : pet['image_url'] ?? '';
-    final name = pet['name'] ?? 'Unknown';
-    final breed = pet['breed'] ?? 'Unknown';
-    final color = pet['color'] ?? 'Unknown';
-    final description = pet['description'] ?? '';
-    final ownerName = pet['ownerName'] ?? pet['reporterName'] ?? 'Unknown';
-    final ownerPhone = pet['ownerPhone'] ?? pet['reporterPhone'] ?? 'Unknown';
-    final date = pet['createdAt'] ?? 'Unknown';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('$label: $name', style: const TextStyle(fontWeight: FontWeight.bold)),
-        if (breed != 'Unknown') Text('Breed: $breed'),
-        if (color != 'Unknown') Text('Color: $color'),
-        if (description.isNotEmpty) Text('Description: $description'),
-        Text('Owner: $ownerName'),
-        Text('Phone: $ownerPhone'),
-        Text('Date: $date'),
-      ],
-    );
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Matches')),
-      body: FutureBuilder<List<dynamic>>(
-        future: _matchesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No matches yet'));
-          }
-
-          final matches = snapshot.data!;
-          return ListView.builder(
-            itemCount: matches.length,
-            itemBuilder: (context, index) {
-              final m = matches[index];
-
-              // Cast maps to avoid LinkedMap issues
-              final lost = Map<String, dynamic>.from(m['lostPet'] ?? m['lost_pet'] ?? m['lost'] ?? {});
-              final found = Map<String, dynamic>.from(m['foundPet'] ?? m['found_pet'] ?? m['found'] ?? {});
-              final score = m['score'] ?? m['matchScore'] ?? '';
-
-              final lostImage = (lost['photoUrls'] != null && lost['photoUrls'].isNotEmpty)
-                  ? lost['photoUrls'][0]
-                  : lost['image_url'] ?? '';
-              final foundImage = (found['photoUrls'] != null && found['photoUrls'].isNotEmpty)
-                  ? found['photoUrls'][0]
-                  : found['image_url'] ?? '';
-
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          lostImage.isNotEmpty
-                              ? Image.network(lostImage, width: 80, height: 80, fit: BoxFit.cover)
-                              : const Icon(Icons.pets, size: 80),
-                          const SizedBox(height: 8),
-                          foundImage.isNotEmpty
-                              ? Image.network(foundImage, width: 80, height: 80, fit: BoxFit.cover)
-                              : const Icon(Icons.pets, size: 80),
-                        ],
-                      ),
-                      const SizedBox(width: 12),
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('Score: $score', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
-                            _buildPetInfo(lost, 'Lost Pet'),
-                            const SizedBox(height: 8),
-                            _buildPetInfo(found, 'Found Pet'),
-                          ],
-                        ),
-                      ),
-                    ],
+      appBar: AppBar(
+        title: const Text('Search Pets'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          children: [
+            // Photo Upload Area
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.camera_alt_outlined, size: 48, color: Colors.grey[600]),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Upload a photo',
+                    style: TextStyle(color: Colors.grey[600]),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Search Bar
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by name...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
-              );
-            },
-          );
-        },
+                filled: true,
+                fillColor: Colors.grey[200],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Pet List
+            Expanded(
+              child: _filteredPets.isEmpty
+                  ? const Center(child: Text('No pets found.'))
+                  : ListView.builder(
+                      itemCount: _filteredPets.length,
+                      itemBuilder: (context, index) {
+                        return PetListCard(pet: _filteredPets[index]);
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+

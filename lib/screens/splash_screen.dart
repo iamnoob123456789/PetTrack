@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'home_screen.dart';
 import 'auth/login_screen.dart';
 
@@ -36,28 +36,25 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
 
-    // Initialize AuthService and listen to auth state changes
-    final authService = Provider.of<AuthService>(context, listen: false);
-    authService.initialize().then((_) {
-      _navigateBasedOnAuth(authService.isAuthenticated);
-    });
+    _navigateToNextScreen();
   }
 
- // In splash_screen.dart
-void _navigateBasedOnAuth(bool isAuthenticated) {
-  if (!mounted) return;
-  
-  // Wait for animations to complete and ensure auth state is settled
-  Future.delayed(const Duration(milliseconds: 1500), () {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => isAuthenticated
-            ? const HomeScreen()
-            : const LoginScreen(),
-      ),
-    );
-  });
-}
+  void _navigateToNextScreen() {
+    Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {

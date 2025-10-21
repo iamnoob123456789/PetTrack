@@ -1,10 +1,11 @@
-// lib/screens/pets/lost_pets_screen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../config.dart';
-import '../../models/pet.dart';
-import '../../widgets/pet_card.dart';
+import 'package:pet_track/config.dart';
+import 'package:pet_track/models/pet.dart';
+import 'package:pet_track/widgets/pet_list_card.dart';
+import 'package:pet_track/widgets/summary_card.dart';
+import 'package:pet_track/models/mock_data.dart';
 
 class LostPetsScreen extends StatefulWidget {
   const LostPetsScreen({super.key});
@@ -14,25 +15,25 @@ class LostPetsScreen extends StatefulWidget {
 }
 
 class _LostPetsScreenState extends State<LostPetsScreen> {
-  late Future<List<Pet>> _futurePets;
+  late Future<List<Pet>> _futureLostPets;
 
   @override
   void initState() {
     super.initState();
-    _futurePets = _fetchPets();
+    _futureLostPets = _fetchLostPets();
   }
 
-  Future<List<Pet>> _fetchPets() async {
-    final response = await http.get(Uri.parse('${Config.backendUrl}/pets'));
-
+  Future<List<Pet>> _fetchLostPets() async {
+    // In a real app, you'd fetch this from your backend
+    final response = await http.get(Uri.parse('${Config.backendUrl}/pets?status=lost'));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
-      return data
-          .map((json) => Pet.fromJson(json))
-          .where((pet) => pet.type == 'lost') // only show lost pets
-          .toList();
+      return data.map((json) => Pet.fromJson(json)).toList();
     } else {
-      throw Exception('Failed to load lost pets');
+      // Mock data for demonstration
+      await Future.delayed(const Duration(seconds: 1));
+      return mockPets.where((p) => p.type == 'lost').toList();
+      // throw Exception('Failed to load lost pets');
     }
   }
 
@@ -40,28 +41,56 @@ class _LostPetsScreenState extends State<LostPetsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Lost Pets"),
+        title: const Text('Lost Pets'),
       ),
-      body: FutureBuilder<List<Pet>>(
-        future: _futurePets,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No lost pets found"));
-          }
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: FutureBuilder<List<Pet>>(
+          future: _futureLostPets,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          final pets = snapshot.data!;
-          return ListView.builder(
-            itemCount: pets.length,
-            itemBuilder: (context, index) {
-              return PetCard(pet: pets[index]);
-            },
-          );
-        },
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+
+            final lostPets = snapshot.data ?? [];
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    SummaryCard(count: lostPets.length.toString(), label: 'Lost', color: Colors.redAccent),
+                    const SummaryCard(count: '0', label: 'Found', color: Colors.green),
+                    const SummaryCard(count: '0', label: 'Reunited', color: Colors.blueAccent),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Recent Reports',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: lostPets.isEmpty
+                      ? const Center(child: Text('No lost pets reported yet.'))
+                      : ListView.builder(
+                          itemCount: lostPets.length,
+                          itemBuilder: (context, index) {
+                            return PetListCard(pet: lostPets[index]);
+                          },
+                        ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
+
