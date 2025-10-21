@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:io';
 import 'package:pet_track/config.dart';
 import 'package:pet_track/models/pet.dart';
 import 'package:pet_track/widgets/pet_list_card.dart';
@@ -26,6 +28,17 @@ class _MatchesScreenState extends State<MatchesScreen> {
     super.initState();
     _fetchAllPets();
     _searchController.addListener(_filterPets);
+  }
+  
+  void _filterPets() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredPets = _allPets.where((pet) {
+        return (pet.name?.toLowerCase()?.contains(query) ?? false) ||
+               (pet.breed?.toLowerCase()?.contains(query) ?? false) ||
+               (pet.description?.toLowerCase()?.contains(query) ?? false);
+      }).toList();
+    });
   }
 
   Future<void> _fetchAllPets() async {
@@ -75,7 +88,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
       final bytes = await _uploadedImage!.readAsBytes();
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://localhost:8000/pets/matches/upload'),
+        Uri.parse('${Config.backendUrl}/pets/matches/upload'),
       );
 
       request.files.add(http.MultipartFile.fromBytes(

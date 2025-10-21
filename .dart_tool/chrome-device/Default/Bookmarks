@@ -1,0 +1,118 @@
+{
+   "checksum": "ca8bf3830aa4d2f0bf9ddabe8cb78420",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "date_added": "13368778215385169",
+            "date_last_used": "13400147129954539",
+            "guid": "9e665932-ba2c-44ec-8372-55842ff0003f",
+            "id": "7",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "MySQL :: MySQL Downloads",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://www.mysql.com/downloads/",
+            "visit_count": 5
+         }, {
+            "date_added": "13381779154261478",
+            "date_last_used": "13394532677402252",
+            "guid": "da078c86-e2ef-4135-a1e4-4598e6d273f4",
+            "id": "8",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "BlockSite: Block Websites & Stay Focused - Microsoft Edge Addons",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://microsoftedge.microsoft.com/addons/detail/blocksite-block-websites/lbnblmjlpifpfpefbcgefbhnlcnnjgjk",
+            "visit_count": 2
+         }, {
+            "date_added": "13386002394253258",
+            "date_last_used": "13392126512206688",
+            "guid": "637613e8-5ccf-4c07-bd2a-d53ce44ea7b0",
+            "id": "9",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "chrome-extension://lbnblmjlpifpfpefbcgefbhnlcnnjgjk/public/blocked.html?word=sex&blockType=word&manualBlocking=true",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "chrome-extension://lbnblmjlpifpfpefbcgefbhnlcnnjgjk/public/blocked.html?word=sex&blockType=word&manualBlocking=true",
+            "visit_count": 2
+         }, {
+            "date_added": "13386406044357502",
+            "date_last_used": "0",
+            "guid": "bbdf3ef2-b367-4a0f-a400-99dd688b8e2e",
+            "id": "10",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Block Site",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "chrome-extension://begakbjclencmabcffpmbfchebjhalkk/src/index.html?page=settings&tab=blockList",
+            "visit_count": 1
+         }, {
+            "date_added": "13400593730022861",
+            "date_last_used": "0",
+            "guid": "2806e65f-dbc7-4a67-8178-a2ed5c78b278",
+            "id": "11",
+            "name": "knockcat/Leetcode: This Repository Contains All My Solved Leetcode Problems.",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://github.com/knockcat/Leetcode",
+            "visit_count": 1
+         } ],
+         "date_added": "13405546903952874",
+         "date_last_used": "0",
+         "date_modified": "13400593730022861",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Favorites bar",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "other": {
+         "children": [  ],
+         "date_added": "13405546903952874",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Other favorites",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [ {
+            "date_added": "13364624004295888",
+            "date_last_used": "0",
+            "guid": "60b13eb6-ceca-4498-8ade-a8c106afb9a9",
+            "id": "6",
+            "name": "Chess-Results Server Chess-results.com - FED-Selection IND",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://chess-results.com/fed.aspx?lan=1&fed=IND&bdld1=25",
+            "visit_count": 0
+         } ],
+         "date_added": "13405546903952874",
+         "date_last_used": "0",
+         "date_modified": "13364624004295888",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Mobile favorites",
+         "source": "unknown",
+         "type": "folder"
+      }
+   },
+   "sync_metadata": "CjEKDgiIgQISCD80ZfqZAQAAEgAqGFRIT2ZRaFFwMDRHTmU0VHkxQzkybFE9PUgDoAYHEq0BCAsSqAEKHFQxSEVpQjBZUnZHZ1poakM2VE15VHNmZzRwZz0SJDI4MDZlNjVmLWRiYzctNGE2Ny04MTc4LWEyZWQ1Yzc4YjI3OBgAIAAoADCc+a2ejjM4hIiuno4zQISIrp6OM0ocSUlnYmxiZ3MxN3lCSStwVWxYVGg5d3ZqQmhNPVofIh3WUjZ6UFR6djJwQmJWaUhwWVlZRU9IL3pTQjk4PWXXkT05wj4CYAUSrQEIChKoAQocZ3pFa3JUekNsRlNLeHV0VGhmZnFtU3B2U08wPRIkYmJkZjNlZjItYjM2Ny00YTBmLWE0MDAtOTlkZDY4OGI4ZTJlGAAgASgAML3olNOfMzjdoo+a2TJArcKYwaAzShw2ckdsM1NreWtnRlhtNlgzSnhIOVAwaDlUNXc9Wh8iHa1IN25ENEJjVHpBZkg4ZCt0Z0RYN0JyZGdYdjg9ZQAAAADCPgJgBRKsAQgIEqcBChxWVERrM2FHQmFsRDEwb0NkTFZ6ekxXSWExTTA9EiRkYTA3OGM4Ni1lMmVmLTQxMzUtYTFlNC00NTk4ZTZkMjczZjQYACAAKAAwlbaZvfcyOIOh7PvHMkCDoez7xzJKHEYwbWFBLzIxNmlFQUxjbXZkeVhpcnRUMDJrVT1aHiIcR0pyMngybWlzV0pnT21NSFZicllWQTdxWDhVPWVWdRJ5wj4CYAUSrAEIBxKnAQocV3R5UzZXSy9XM21qSHRvR2VlZUtvS0FvRXlRPRIkOWU2NjU5MzItYmEyYy00NGVjLTgzNzItNTU4NDJmZjAwMDNmGAAgACgAMPjXkbyMMzjEg8LElzJAxIPCxJcyShw3U1Z5eGZFYnBlbTJJcE8ySkFkcVc5eXhWTjQ9Wh4iHEJ3bnFSOFFCcFpaMGJYVmJWUFErNnVHSDVNRT1lM1h7yMI+AmAFEqwBCAkSpwEKHGs2bGhNK0g5aW9ZYzdyQ2V5M0JzV1NERzZyZz0SJDYzNzYxM2U4LTVjY2YtNGMwNy1iZDJhLWQ1M2NlNDRlYTdiMBgAIAEoADC+6JTTnzM4iKbS2dcyQK3CmMGgM0ocWUhWRG1DRGZKMDdBdWlyN2JwSFIybkd0SWhNPVoeIhxaM0dCMTFzRlNSQklZNTVWd0xra0pvREVkdWc9ZQAAAADCPgJgBRKOAQgBEokBChx5eEovNmZ2a2VjcjdrcDVFUXpCNHRXTHBkYkU9EiQ0YTVmYmEyOC1mYTI5LTVjNDAtYjhlMi1mNTkyZGY3MWQyODkYACAAKAAw4+fZvrIxOPbt2b6yMUD27dm+sjFKHGFSQ1dMZ2hGOWI1SW5xS0lEdnVKL2p2UWtGYz1aAGUAAAAAwj4CYAASjgEIAxKJAQocbmpnRHU4OGVDcnZYcDg2cEQ3ZkhHY3FGcDg4PRIkOWZkNzkyYzQtMWUyYS01ZThhLTkwMzItMjhiYzU4OWMyODdlGAAgACgAMOnn2b6yMTjR7tm+sjFA0e7ZvrIxShx5ek5CMDFjbjU0QTdjUlUwdVQrL1BnbVR0VW89WgBlAAAAAMI+AmAAEo4BCAISiQEKHFljU1RvbnZFU1B3cUNzNEwyY3JWaHY2OEw5OD0SJDMwYTRjNDI3LTU2OTMtNTc1Zi04MWYwLTU1Mjc0MWZmNTE3MBgAIAAoADDk59m+sjE4ku7ZvrIxQJLu2b6yMUocb1BWa2h3QlJiVjY1S0NXUjIrSU9OSFdvT3U4PVoAZQAAAADCPgJgABKsAQgGEqcBChwzOEFBd2dNR09nc3hUTlR0L2tRcDd5d01yREk9EiQ2MGIxM2ViNi1jZWNhLTQ0OTgtOGFkZS1hOGMxMDZhZmI5YTkYACAAKAAwo/KS4LYyOIP4kuC2MkCD+JLgtjJKHG9veDdrNDNoQmVVdkJDYitrcHpSUWliRHRNMD1aHiIccWV2RVhBWGNIdUg0aDRJTDYrNWZrMkJQblNNPWUAAAAAwj4CYAUwADgA",
+   "version": 1
+}
