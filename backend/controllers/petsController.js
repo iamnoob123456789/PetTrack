@@ -2,6 +2,7 @@ import Pet from '../models/Pet.js';
 import Match from '../models/Match.js';
 import { uploadToCloudinary } from '../config/cloudinary.js';
 import fetch from 'node-fetch'; // install node-fetch if Node < 18
+import geocodeAddress from '../utils/geocoder.js';
 
 const MATCHING_API_URL = process.env.MATCHING_API_URL || "http://localhost:8000/match_score";
 const VALID_TYPES = ['lost', 'found'];
@@ -35,6 +36,13 @@ export const addLostPet = async (req, res) => {
 
     const latitude = parseFloat(req.body.latitude);
     const longitude = parseFloat(req.body.longitude);
+    let location;
+
+    if (!isNaN(latitude) && !isNaN(longitude)) {
+      location = { type: 'Point', coordinates: [longitude, latitude] };
+    } else if (req.body.address) {
+      location = await geocodeAddress(req.body.address);
+    }
 
     const petData = {
       name,
@@ -48,7 +56,7 @@ export const addLostPet = async (req, res) => {
       address: req.body.address,
       photoUrls,
       ownerId: req.user?.id || '0', // assuming user is logged in
-      location: (!isNaN(latitude) && !isNaN(longitude)) ? { type: 'Point', coordinates: [longitude, latitude] } : undefined,
+      location,
     };
 
     const saved = await Pet.create(petData);
@@ -83,6 +91,13 @@ export const addFoundPet = async (req, res) => {
 
     const latitude = parseFloat(req.body.latitude);
     const longitude = parseFloat(req.body.longitude);
+    let location;
+
+    if (!isNaN(latitude) && !isNaN(longitude)) {
+      location = { type: 'Point', coordinates: [longitude, latitude] };
+    } else if (req.body.address) {
+      location = await geocodeAddress(req.body.address);
+    }
 
     const petData = {
       name,
@@ -95,7 +110,7 @@ export const addFoundPet = async (req, res) => {
       address: req.body.address,
       photoUrls,
       reporterId: req.user?.id || '0',
-      location: (!isNaN(latitude) && !isNaN(longitude)) ? { type: 'Point', coordinates: [longitude, latitude] } : undefined,
+      location,
     };
 
     const newPet = new Pet(petData);

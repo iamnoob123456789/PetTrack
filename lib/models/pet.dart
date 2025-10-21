@@ -1,3 +1,4 @@
+import 'package:pet_track/models/location.dart';
 
 // lib/models/pet.dart
 class Pet {
@@ -17,6 +18,7 @@ class Pet {
   final DateTime? createdAt;
   final String? address;
   final String? ownerId;
+  final Location? location;
 
   Pet({
     required this.id,
@@ -35,6 +37,7 @@ class Pet {
     this.createdAt,
     this.address,
     this.ownerId,
+    this.location,
   });
 
   factory Pet.fromJson(Map<String, dynamic> json) {
@@ -55,6 +58,7 @@ class Pet {
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
       address: json['address'],
       ownerId: json['ownerId'],
+      location: json['location'] != null ? Location.fromJson(json['location']) : null,
     );
   }
 
@@ -76,6 +80,7 @@ class Pet {
       'createdAt': createdAt?.toIso8601String(),
       'address': address,
       'ownerId': ownerId,
+      'location': location?.toJson(),
     };
   }
 }

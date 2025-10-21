@@ -24,7 +24,7 @@ class _FoundPetsScreenState extends State<FoundPetsScreen> {
   }
 
   Future<List<Pet>> _fetchFoundPets() async {
-    final response = await http.get(Uri.parse('${Config.backendUrl}/pets?status=found'));
+    final response = await http.get(Uri.parse('${Config.backendUrl}/pets?type=found'));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => Pet.fromJson(json)).toList();

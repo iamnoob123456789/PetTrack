@@ -1,10 +1,13 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from models.pet import Pet
 from matching_engine import match_score
 from database import pets_collection, matches_collection
 from bson import ObjectId
+import base64
+import io
+from PIL import Image
 
 app = FastAPI()
 
@@ -177,5 +180,49 @@ async def match_score_api(request: Request):
                 "score": score_val
             })
 
-    # ⚡ Node expects a **list** not an object with 'matches'
-    return out_matches
+@app.post("/pets/matches/upload")
+async def upload_and_match(file: UploadFile = File(...)):
+    """
+    Upload an image and find matching pets
+    """
+    try:
+        # Read the uploaded file
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+
+        # For now, we'll simulate a pet object for matching
+        # In a real implementation, you'd extract features from the image
+        # and create a pet-like object for matching
+        fake_pet = {
+            "image_url": f"data:image/jpeg;base64,{base64.b64encode(contents).decode()}",
+            "type": "unknown"
+        }
+
+        # Find matches against existing pets
+        all_pets = list(pets_collection.find())
+        matches = []
+
+        for pet in all_pets:
+            if "image_url" not in pet and "photoUrls" in pet and pet["photoUrls"]:
+                pet["image_url"] = pet["photoUrls"][0]
+
+            if "image_url" in pet:
+                try:
+                    # Simulate matching (replace with actual image comparison)
+                    score = match_score(fake_pet, pet) if "image_url" in pet else 0.0
+                    score_val = float(score)
+
+                    if score_val >= 0.7:
+                        matches.append({
+                            "id": str(pet["_id"]),
+                            "score": score_val,
+                            "pet": pet
+                        })
+                except Exception as e:
+                    print(f"Error matching pet {pet.get('_id')}: {e}")
+                    continue
+
+        return {"matches": matches}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")

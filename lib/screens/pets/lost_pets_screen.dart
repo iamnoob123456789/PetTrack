@@ -25,7 +25,7 @@ class _LostPetsScreenState extends State<LostPetsScreen> {
 
   Future<List<Pet>> _fetchLostPets() async {
     // In a real app, you'd fetch this from your backend
-    final response = await http.get(Uri.parse('${Config.backendUrl}/pets?status=lost'));
+    final response = await http.get(Uri.parse('${Config.backendUrl}/pets?type=lost'));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => Pet.fromJson(json)).toList();
